@@ -209,3 +209,22 @@ class GaussianLoss(nn.Module):
             loss = loss.mean(dim=0) if self.avg else loss.sum(dim=0)
         assert not (torch.isnan(loss).any() or torch.isinf(loss).any()), "None or inf value encountered!"
         return loss
+
+
+class MSE(nn.Module):
+    def __init__(self, per_neuron=False, avg = True):
+        super().__init__()
+        self.per_neuron = per_neuron
+        self.avg = avg
+        if self.avg:
+            warnings.warn("Poissonloss is averaged per batch. It's recommended to use `sum` instead")
+
+    def forward(self, output, target):
+        target = target.detach()
+        loss = (target - output)**2
+
+        if not self.per_neuron:
+            return loss.mean() if self.avg else loss.sum()
+        else:
+            loss = loss.view(-1, loss.shape[-1])
+            return loss.mean(dim=0) if self.avg else loss.sum(dim=0)
